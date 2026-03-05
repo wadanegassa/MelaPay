@@ -71,7 +71,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Transfer Money')),
       body: walletsAsync.when(
-        data: (wallets) => Padding(
+        data: (wallets) => SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
