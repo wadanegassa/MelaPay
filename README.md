@@ -1,17 +1,21 @@
-# melapay
+# MelaPay - Simple Wallet App
 
-A new Flutter project.
+A Flutter take-home project demonstrating wallet management, balance tracking, and transaction history.
 
-## Getting Started
+## Features
+- **Wallet List**: Overview of all wallets and balances.
+- **Wallet Details**: Specific wallet view with history.
+- **Balance Actions**: Deposit, Withdraw, and Transfer between wallets.
+- **Dynamic Updates**: Real-time state updates using a stateful in-memory mock backend.
 
-This project is a starting point for a Flutter application.
+## Architecture
+- **State Management**: Flutter Riverpod (Notifier/riverpod_annotation)
+- **Navigation**: GoRouter
+- **Networking**: Dio with custom Interceptor for Mock API
+- **Design Pattern**: Clean Architecture (Feature-driven)
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# MelaPay
+## Setup
+1. Ensure you have Flutter installed.
+2. Run `flutter pub get`
+3. Run `flutter analyze` to verify the codebase.
+4. Run `flutter run` to launch the app.
