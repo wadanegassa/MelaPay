@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String label;
@@ -16,11 +17,26 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: onPressed != null && !isLoading
+            ? [
+                BoxShadow(
+                  color: (color ?? const Color(0xFF424769)).withAlpha(50),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+              ]
+            : null,
+      ),
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
-        style: color != null ? ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white) : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: color != null ? Colors.white : null,
+        ),
         child: isLoading
             ? const SizedBox(
                 height: 20,
@@ -47,14 +63,33 @@ class AmountTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      decoration: InputDecoration(
-        labelText: label,
-        prefixText: '\$ ',
-        errorText: errorText,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF7077A1),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF2D3250),
+          ),
+          decoration: InputDecoration(
+            hintText: '0.00',
+            prefixIcon: const Icon(Icons.attach_money, color: Color(0xFF424769)),
+            errorText: errorText,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -64,7 +99,26 @@ class LoadingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator());
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(
+            color: Color(0xFF424769),
+            strokeWidth: 3,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Processing...',
+            style: GoogleFonts.inter(
+              color: const Color(0xFF7077A1),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -82,21 +136,44 @@ class ErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF05941).withAlpha(15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.error_outline_rounded, size: 48, color: Color(0xFFF05941)),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Something went wrong',
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF2D3250),
+              ),
+            ),
+            const SizedBox(height: 12),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: const Color(0xFF7077A1),
+                height: 1.5,
+              ),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: const Text('Try Again'),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: 200,
+              child: PrimaryButton(
+                label: 'Try Again',
+                onPressed: onRetry,
+              ),
             ),
           ],
         ),

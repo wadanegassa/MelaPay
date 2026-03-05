@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:melapay/features/wallets/presentation/providers/wallet_provider.dart';
 import 'package:melapay/features/wallets/presentation/widgets/wallet_widgets.dart';
@@ -37,18 +38,18 @@ class WalletDetailsScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: ActionButton(
-                        icon: Icons.add,
+                        icon: Icons.arrow_downward_rounded,
                         label: 'Deposit',
-                        color: Colors.green,
+                        color: const Color(0xFF00A9FF),
                         onTap: () => context.push('/deposit/$id'),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: ActionButton(
-                        icon: Icons.remove,
+                        icon: Icons.arrow_upward_rounded,
                         label: 'Withdraw',
-                        color: Colors.red,
+                        color: const Color(0xFFF05941),
                         onTap: () => context.push('/withdraw/$id'),
                       ),
                     ),
@@ -56,25 +57,34 @@ class WalletDetailsScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
                   'Recent Transactions',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF2D3250),
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               transactionsAsync.when(
                 data: (transactions) => transactions.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.all(24.0),
-                        child: Center(child: Text('No transactions yet.')),
+                    ? Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Center(
+                          child: Text(
+                            'No transactions yet.',
+                            style: GoogleFonts.inter(color: const Color(0xFF7077A1)),
+                          ),
+                        ),
                       )
-                    : ListView.separated(
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: transactions.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
                         itemBuilder: (context, index) => TransactionTile(transaction: transactions[index]),
                       ),
                 loading: () => const LoadingIndicator(),
@@ -112,15 +122,49 @@ class ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 20),
-      label: Text(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color.withAlpha(20),
-        foregroundColor: color,
-        elevation: 0,
-        side: BorderSide(color: color.withAlpha(40)),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: color.withAlpha(25),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: color.withAlpha(20),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: 28),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFF2D3250),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
