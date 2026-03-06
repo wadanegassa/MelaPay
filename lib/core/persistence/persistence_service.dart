@@ -17,6 +17,7 @@ class PersistenceService {
     // Open boxes for caching
     await Hive.openBox('wallets');
     await Hive.openBox('transactions');
+    await Hive.openBox('mock_backend');
   }
 
   // Hive Box Accessors

@@ -1,33 +1,54 @@
-
 import 'package:dio/dio.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:melapay/core/constants/api_constants.dart';
 
 class MockInterceptor extends Interceptor {
-  // Stateful in-memory storage
-  static final List<Map<String, dynamic>> _wallets = [
-    {'id': 'wallet_1', 'balance': 1500.50},
-    {'id': 'wallet_2', 'balance': 500.00},
-    {'id': 'wallet_3', 'balance': 25.75},
-  ];
+  static final _mockBox = Hive.box('mock_backend');
 
-  static final List<Map<String, dynamic>> _transactions = [
-    {
-      'id': 'tx_1',
-      'walletId': 'wallet_1',
-      'type': 'deposit',
-      'amount': 1000.0,
-      'timestamp': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-      'description': 'Initial deposit'
-    },
-    {
-      'id': 'tx_2',
-      'walletId': 'wallet_2',
-      'type': 'deposit',
-      'amount': 500.0,
-      'timestamp': DateTime.now().subtract(const Duration(hours: 5)).toIso8601String(),
-      'description': 'Initial deposit'
-    },
-  ];
+  static List<Map<String, dynamic>> get _wallets {
+    final data = _mockBox.get('wallets');
+    if (data == null) {
+      return [
+        {'id': 'wallet_1', 'balance': 1500.50},
+        {'id': 'wallet_2', 'balance': 500.00},
+        {'id': 'wallet_3', 'balance': 25.75},
+      ];
+    }
+    return (data as List).map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
+  static List<Map<String, dynamic>> get _transactions {
+    final data = _mockBox.get('transactions');
+    if (data == null) {
+      return [
+        {
+          'id': 'tx_1',
+          'walletId': 'wallet_1',
+          'type': 'deposit',
+          'amount': 1000.0,
+          'timestamp': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+          'description': 'Initial deposit'
+        },
+        {
+          'id': 'tx_2',
+          'walletId': 'wallet_2',
+          'type': 'deposit',
+          'amount': 500.0,
+          'timestamp': DateTime.now().subtract(const Duration(hours: 5)).toIso8601String(),
+          'description': 'Initial deposit'
+        },
+      ];
+    }
+    return (data as List).map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
+  static Future<void> _saveWallets(List<Map<String, dynamic>> wallets) async {
+    await _mockBox.put('wallets', wallets);
+  }
+
+  static Future<void> _saveTransactions(List<Map<String, dynamic>> transactions) async {
+    await _mockBox.put('transactions', transactions);
+  }
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
@@ -80,10 +101,14 @@ class MockInterceptor extends Interceptor {
       final walletId = path.split('/')[2];
       final amount = (options.data['amount'] as num).toDouble();
       
-      final walletIndex = _wallets.indexWhere((w) => w['id'] == walletId);
+      final wallets = _wallets;
+      final walletIndex = wallets.indexWhere((w) => w['id'] == walletId);
       if (walletIndex != -1) {
-        _wallets[walletIndex]['balance'] += amount;
-        _transactions.insert(0, {
+        wallets[walletIndex]['balance'] += amount;
+        await _saveWallets(wallets);
+
+        final transactions = _transactions;
+        transactions.insert(0, {
           'id': 'tx_${DateTime.now().millisecondsSinceEpoch}',
           'walletId': walletId,
           'type': 'deposit',
@@ -91,9 +116,11 @@ class MockInterceptor extends Interceptor {
           'timestamp': DateTime.now().toIso8601String(),
           'description': 'Deposit'
         });
+        await _saveTransactions(transactions);
+
         handler.resolve(Response(
           requestOptions: options,
-          data: {'success': true, 'message': 'Deposit successful', 'newBalance': _wallets[walletIndex]['balance']},
+          data: {'success': true, 'message': 'Deposit successful', 'newBalance': wallets[walletIndex]['balance']},
           statusCode: 200,
         ));
       } else {
@@ -110,11 +137,15 @@ class MockInterceptor extends Interceptor {
       final walletId = path.split('/')[2];
       final amount = (options.data['amount'] as num).toDouble();
       
-      final walletIndex = _wallets.indexWhere((w) => w['id'] == walletId);
+      final wallets = _wallets;
+      final walletIndex = wallets.indexWhere((w) => w['id'] == walletId);
       if (walletIndex != -1) {
-        if (_wallets[walletIndex]['balance'] >= amount) {
-          _wallets[walletIndex]['balance'] -= amount;
-          _transactions.insert(0, {
+        if (wallets[walletIndex]['balance'] >= amount) {
+          wallets[walletIndex]['balance'] -= amount;
+          await _saveWallets(wallets);
+
+          final transactions = _transactions;
+          transactions.insert(0, {
             'id': 'tx_${DateTime.now().millisecondsSinceEpoch}',
             'walletId': walletId,
             'type': 'withdraw',
@@ -122,9 +153,11 @@ class MockInterceptor extends Interceptor {
             'timestamp': DateTime.now().toIso8601String(),
             'description': 'Withdrawal'
           });
+          await _saveTransactions(transactions);
+
           handler.resolve(Response(
             requestOptions: options,
-            data: {'success': true, 'message': 'Withdrawal successful', 'newBalance': _wallets[walletIndex]['balance']},
+            data: {'success': true, 'message': 'Withdrawal successful', 'newBalance': wallets[walletIndex]['balance']},
             statusCode: 200,
           ));
         } else {
@@ -153,16 +186,19 @@ class MockInterceptor extends Interceptor {
       final toId = options.data['toId'];
       final amount = (options.data['amount'] as num).toDouble();
 
-      final fromIndex = _wallets.indexWhere((w) => w['id'] == fromId);
-      final toIndex = _wallets.indexWhere((w) => w['id'] == toId);
+      final wallets = _wallets;
+      final fromIndex = wallets.indexWhere((w) => w['id'] == fromId);
+      final toIndex = wallets.indexWhere((w) => w['id'] == toId);
 
       if (fromIndex != -1 && toIndex != -1) {
-        if (_wallets[fromIndex]['balance'] >= amount) {
-          _wallets[fromIndex]['balance'] -= amount;
-          _wallets[toIndex]['balance'] += amount;
+        if (wallets[fromIndex]['balance'] >= amount) {
+          wallets[fromIndex]['balance'] -= amount;
+          wallets[toIndex]['balance'] += amount;
+          await _saveWallets(wallets);
 
           final now = DateTime.now().toIso8601String();
-          _transactions.insert(0, {
+          final transactions = _transactions;
+          transactions.insert(0, {
             'id': 'tx_${DateTime.now().millisecondsSinceEpoch}_1',
             'walletId': fromId,
             'type': 'transfer',
@@ -170,7 +206,7 @@ class MockInterceptor extends Interceptor {
             'timestamp': now,
             'description': 'Transfer to $toId'
           });
-          _transactions.insert(0, {
+          transactions.insert(0, {
             'id': 'tx_${DateTime.now().millisecondsSinceEpoch}_2',
             'walletId': toId,
             'type': 'transfer',
@@ -178,6 +214,7 @@ class MockInterceptor extends Interceptor {
             'timestamp': now,
             'description': 'Transfer from $fromId'
           });
+          await _saveTransactions(transactions);
 
           handler.resolve(Response(
             requestOptions: options,
