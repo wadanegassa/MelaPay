@@ -23,7 +23,7 @@ final apiClientProvider = AutoDisposeProvider<ApiClient>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ApiClientRef = AutoDisposeProviderRef<ApiClient>;
-String _$walletRepositoryHash() => r'a6d379510fed32be45a42568fae7385c9213080e';
+String _$walletRepositoryHash() => r'a3568e40de3ffb52e943a0d5a84c56ab4644ae15';
 
 /// See also [walletRepository].
 @ProviderFor(walletRepository)
@@ -425,7 +425,7 @@ class _TransactionsProviderElement
   String get walletId => (origin as TransactionsProvider).walletId;
 }
 
-String _$walletActionHash() => r'd069fc4a296f0a1d76b2eb5a3aa8948e9be9fc75';
+String _$walletActionHash() => r'220fa48bc5cb7a64db93767d24239b487a75892c';
 
 /// See also [WalletAction].
 @ProviderFor(WalletAction)

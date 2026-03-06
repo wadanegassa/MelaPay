@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:melapay/core/network/api_client.dart';
 import 'package:melapay/core/network/mock_interceptor.dart';
+import 'package:melapay/core/persistence/persistence_service.dart';
+import 'package:melapay/features/wallets/data/datasources/wallet_local_datasource.dart';
 import 'package:melapay/features/wallets/data/datasources/wallet_remote_datasource_impl.dart';
 import 'package:melapay/features/wallets/data/repositories/wallet_repository_impl.dart';
 import 'package:melapay/features/wallets/domain/entities/wallet.dart';
@@ -22,8 +24,15 @@ ApiClient apiClient(Ref ref) {
 @riverpod
 WalletRepository walletRepository(Ref ref) {
   final apiClient = ref.watch(apiClientProvider);
+  final persistence = ref.watch(persistenceServiceProvider);
+  
   final remoteDataSource = WalletRemoteDataSourceImpl(apiClient);
-  return WalletRepositoryImpl(remoteDataSource);
+  final localDataSource = WalletLocalDataSourceImpl(
+    persistence.walletsBox,
+    persistence.transactionsBox,
+  );
+  
+  return WalletRepositoryImpl(remoteDataSource, localDataSource);
 }
 
 @riverpod

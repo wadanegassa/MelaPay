@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:melapay/core/errors/failure.dart';
+import 'package:melapay/features/wallets/data/datasources/wallet_local_datasource.dart';
 import 'package:melapay/features/wallets/data/datasources/wallet_remote_datasource.dart';
 
 import 'package:melapay/features/wallets/domain/entities/wallet.dart';
@@ -8,17 +9,28 @@ import 'package:melapay/features/wallets/domain/repositories/wallet_repository.d
 
 class WalletRepositoryImpl implements WalletRepository {
   final WalletRemoteDataSource _remoteDataSource;
+  final WalletLocalDataSource _localDataSource;
 
-  WalletRepositoryImpl(this._remoteDataSource);
+  WalletRepositoryImpl(this._remoteDataSource, this._localDataSource);
 
   @override
   Future<Either<Failure, List<Wallet>>> getWallets() async {
     try {
+      // Try remote first
       final models = await _remoteDataSource.getWallets();
+      // Cache the result
+      await _localDataSource.cacheWallets(models);
       return Right(models.map((m) => Wallet(id: m.id, balance: m.balance)).toList());
-    } on DioException catch (e) {
-      return Left(ServerFailure(e.response?.data?['error'] ?? 'Failed to load wallets'));
     } catch (e) {
+      // Fallback to cache
+      final cachedModels = await _localDataSource.getWallets();
+      if (cachedModels.isNotEmpty) {
+        return Right(cachedModels.map((m) => Wallet(id: m.id, balance: m.balance)).toList());
+      }
+      
+      if (e is DioException) {
+        return Left(ServerFailure(e.response?.data?['error'] ?? 'Failed to load wallets'));
+      }
       return Left(ServerFailure(e.toString()));
     }
   }
@@ -29,6 +41,12 @@ class WalletRepositoryImpl implements WalletRepository {
       final model = await _remoteDataSource.getWallet(id);
       return Right(Wallet(id: model.id, balance: model.balance));
     } on DioException catch (e) {
+      // For single wallet, we might still have it in the cached list
+      final cachedWallets = await _localDataSource.getWallets();
+      final cached = cachedWallets.where((w) => w.id == id).firstOrNull;
+      if (cached != null) {
+        return Right(Wallet(id: cached.id, balance: cached.balance));
+      }
       return Left(ServerFailure(e.response?.data?['error'] ?? 'Failed to load wallet'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -39,6 +57,7 @@ class WalletRepositoryImpl implements WalletRepository {
   Future<Either<Failure, List<Transaction>>> getTransactions(String walletId) async {
     try {
       final models = await _remoteDataSource.getTransactions(walletId);
+      await _localDataSource.cacheTransactions(walletId, models);
       return Right(models.map((m) => Transaction(
         id: m.id,
         walletId: m.walletId,
@@ -47,9 +66,22 @@ class WalletRepositoryImpl implements WalletRepository {
         timestamp: DateTime.parse(m.timestamp),
         description: m.description,
       )).toList());
-    } on DioException catch (e) {
-      return Left(ServerFailure(e.response?.data?['error'] ?? 'Failed to load transactions'));
     } catch (e) {
+      final cachedModels = await _localDataSource.getTransactions(walletId);
+      if (cachedModels.isNotEmpty) {
+        return Right(cachedModels.map((m) => Transaction(
+          id: m.id,
+          walletId: m.walletId,
+          type: TransactionType.values.byName(m.type),
+          amount: m.amount,
+          timestamp: DateTime.parse(m.timestamp),
+          description: m.description,
+        )).toList());
+      }
+      
+      if (e is DioException) {
+        return Left(ServerFailure(e.response?.data?['error'] ?? 'Failed to load transactions'));
+      }
       return Left(ServerFailure(e.toString()));
     }
   }

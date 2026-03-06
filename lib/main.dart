@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:melapay/app/app.dart';
+import 'package:melapay/core/persistence/persistence_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  final persistenceService = PersistenceService();
+  await persistenceService.init();
+  
   runApp(
-    const ProviderScope(
-      child: MelaPayApp(),
+    ProviderScope(
+      overrides: [
+        persistenceServiceProvider.overrideWithValue(persistenceService),
+      ],
+      child: const MelaPayApp(),
     ),
   );
 }

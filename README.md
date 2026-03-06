@@ -42,6 +42,12 @@ To demonstrate API integration without relying on an external backend, the app u
 - The interceptor intercepts real HTTP requests (GET, POST) and processes them against an in-memory data store.
 - It simulates network latency, processes transactions (deposits, withdrawals, transfers), updates balances dynamically, and returns standard HTTP responses (including error codes like 400 for insufficient funds).
 
+### Persistence & Caching
+The application implements a robust local caching system using **Hive** to ensure data availability across app restarts and offline usage.
+- **Cache-Aside Pattern**: The repository first attempts to fetch fresh data from the API. On success, it updates the local cache. On failure (e.g., no internet), it seamlessly falls back to the last known cached data.
+- **Persistence Service**: A centralized `PersistenceService` handles the initialization and management of Hive boxes for wallets and transactions.
+- **Instant Availability**: By leveraging the local cache, the UI can display balance and transaction information immediately upon launch, even before the network request completes.
+
 ### UI Implementation
 The user interface implements a custom, consistent design system:
 - Built with a modern slate and indigo color palette.
